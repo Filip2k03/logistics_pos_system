@@ -70,9 +70,9 @@ mysqli_close($conn);
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Voucher - <?php echo $voucher_data ? htmlspecialchars($voucher_data['voucher_number']) : 'Details'; ?></title>
     <!-- Bootstrap 5.3 CSS CDN -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" xintegrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <link href="[https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css](https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css)" rel="stylesheet" xintegrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     <!-- Google Fonts - Inter -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="[https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap](https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap)" rel="stylesheet">
     <style>
         body {
             font-family: 'Inter', sans-serif;
@@ -123,7 +123,7 @@ mysqli_close($conn);
                 right: 20px; /* Adjust as needed */
                 width: 100px; /* Adjust logo size */
                 height: 100px; /* Adjust logo size */
-                background-image: url('https://placehold.co/100x100/000000/FFFFFF?text=Logo'); /* **YOUR COMPANY LOGO URL HERE** */
+                background-image: url('[https://placehold.co/100x100/000000/FFFFFF?text=Logo](https://placehold.co/100x100/000000/FFFFFF?text=Logo)'); /* **YOUR COMPANY LOGO URL HERE** */
                 background-size: contain;
                 background-repeat: no-repeat;
                 background-position: center;

@@ -70,4 +70,74 @@ function sanitize_input($data) {
     return $data; // Return the sanitized data
 }
 
-?>
+/**
+ * Fetches the count of vouchers created today.
+ * For 'ADMIN' users, it fetches the count for all regions.
+ * For other regions, it fetches the count only for vouchers created by users in their region.
+ * @param mysqli $conn The database connection object.
+ * @param string $user_region The region code of the logged-in user ('ADMIN' for all).
+ * @return int The count of daily vouchers.
+ */
+function get_daily_voucher_count($conn, $user_region) {
+    $count = 0;
+    $sql = "SELECT COUNT(id) AS daily_count FROM vouchers WHERE DATE(created_at) = CURDATE()";
+    $params = [];
+    $types = "";
+
+    // If the user is NOT an admin, filter by the region of the user who created the voucher
+    if ($user_region !== 'ADMIN') {
+        $sql .= " AND created_by_user_id IN (SELECT id FROM users WHERE region = ?)";
+        $params[] = $user_region;
+        $types .= "s";
+    }
+
+    if ($stmt = mysqli_prepare($conn, $sql)) {
+        if (!empty($params)) {
+            mysqli_stmt_bind_param($stmt, $types, ...$params);
+        }
+        mysqli_stmt_execute($stmt);
+        mysqli_stmt_bind_result($stmt, $count);
+        mysqli_stmt_fetch($stmt);
+        mysqli_stmt_close($stmt);
+    } else {
+        error_log("Error fetching daily voucher count: " . mysqli_error($conn));
+    }
+    return $count;
+}
+
+/**
+ * Calculates the total profit (total_amount) for vouchers created in the current month.
+ * For 'ADMIN' users, it calculates profit for all regions.
+ * For other regions, it calculates profit only for vouchers created by users in their region.
+ * @param mysqli $conn The database connection object.
+ * @param string $user_region The region code of the logged-in user ('ADMIN' for all).
+ * @return float The monthly profit.
+ */
+function get_monthly_profit($conn, $user_region) {
+    $profit = 0.00;
+    // SUM(total_amount) assumes total_amount is profit. Adjust if profit calculation is different.
+    $sql = "SELECT SUM(total_amount) AS monthly_profit FROM vouchers WHERE MONTH(created_at) = MONTH(CURDATE()) AND YEAR(created_at) = YEAR(CURDATE())";
+    $params = [];
+    $types = "";
+
+    // If the user is NOT an admin, filter by the region of the user who created the voucher
+    if ($user_region !== 'ADMIN') {
+        $sql .= " AND created_by_user_id IN (SELECT id FROM users WHERE region = ?)";
+        $params[] = $user_region;
+        $types .= "s";
+    }
+
+    if ($stmt = mysqli_prepare($conn, $sql)) {
+        if (!empty($params)) {
+            mysqli_stmt_bind_param($stmt, $types, ...$params);
+        }
+        mysqli_stmt_execute($stmt);
+        mysqli_stmt_bind_result($stmt, $profit);
+        mysqli_stmt_fetch($stmt);
+        mysqli_stmt_close($stmt);
+    } else {
+        error_log("Error fetching monthly profit: " . mysqli_error($conn));
+    }
+    // Return 0.00 if SUM returns null (no records)
+    return $profit === null ? 0.00 : (float)$profit;
+}

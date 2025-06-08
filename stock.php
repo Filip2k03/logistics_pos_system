@@ -41,17 +41,16 @@ $params = [];
 $types = "";
 $where_clauses = [];
 
-// If the user is NOT an admin, apply region-specific filtering
+// Apply role-based filtering:
+// If the user is NOT an admin, restrict the view to items relevant to their region.
 if ($user_region !== 'ADMIN') {
-    // A regular user from a region can see:
-    // 1. Items that originated from their region (v.origin_region = user_region)
-    // 2. Items that are currently located in their region (s.current_location_region = user_region)
+    // A regular user can see items that originated from their region OR are currently located in their region.
     $where_clauses[] = "(v.origin_region = ? OR s.current_location_region = ?)";
     $params[] = $user_region;
     $params[] = $user_region;
     $types .= "ss";
 }
-// If user is ADMIN, no region filtering is applied at this stage, they see all.
+// If user is ADMIN, no region-specific filtering is applied at this stage, they see all stock.
 
 // Add status filter if a status is provided in the GET request
 if (!empty($filter_status)) {
@@ -412,4 +411,4 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 
-<?php include 'includes/footer.php'; ?>
+<?php include 'includes/footer.php'; // Include the common footer HTML ?>

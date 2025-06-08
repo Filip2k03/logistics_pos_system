@@ -16,8 +16,9 @@ if (!isLoggedIn()) {
 $user_region = $_SESSION['region'];
 
 // Fetch daily voucher count and monthly profit
-// $daily_vouchers = get_daily_voucher_count($conn, $user_region);
-// $monthly_profit = get_monthly_profit($conn, $user_region);
+// These functions already contain logic to filter by region if the user is not 'ADMIN'
+$daily_vouchers = get_daily_voucher_count($conn, $user_region);
+$monthly_profit = get_monthly_profit($conn, $user_region);
 
 // Close connection for dashboard page (will be reopened by other pages if needed)
 mysqli_close($conn);
@@ -42,6 +43,7 @@ mysqli_close($conn);
     <?php endif; ?>
 
     <div class="row g-4 mb-4">
+        <!-- Daily Vouchers Card - Data is filtered by region in get_daily_voucher_count -->
         <div class="col-md-6 col-lg-4">
             <div class="card text-center h-100 p-3 bg-light">
                 <div class="card-body">
@@ -50,6 +52,7 @@ mysqli_close($conn);
                 </div>
             </div>
         </div>
+        <!-- Monthly Profit Card - Data is filtered by region in get_monthly_profit -->
         <div class="col-md-6 col-lg-4">
             <div class="card text-center h-100 p-3 bg-light">
                 <div class="card-body">
