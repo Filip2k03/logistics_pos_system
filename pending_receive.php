@@ -14,7 +14,7 @@ if (!isLoggedIn()) {
 
 $user_region = $_SESSION['region']; // Get the logged-in user's region
 $pending_items = []; // Initialize an empty array to store pending items
-$months_threshold = 9; // Define the threshold for "long pending" items (e.g., 9 months)
+$months_threshold = 1; // Define the threshold for "long pending" items (e.g., 9 months)
 
 // SQL query to retrieve items that are:
 // 1. In 'ARRIVED_PENDING_RECEIVE' status.

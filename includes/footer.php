@@ -10,49 +10,13 @@
     <link rel="stylesheet" href="css/style.css">
     <!-- Google Fonts - Inter -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #f8f9fa;
-        }
-        .navbar {
-            background-color: #343a40 !important; /* Dark background for navbar */
-        }
-        .navbar .nav-link, .navbar .navbar-brand {
-            color: #ffffff !important;
-        }
-        .navbar .nav-link:hover {
-            color: #adb5bd !important;
-        }
-        .container-fluid {
-            padding-top: 20px;
-        }
-        .card {
-            border-radius: 15px;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-        }
-        .btn-primary {
-            background-color: #007bff;
-            border-color: #007bff;
-            border-radius: 8px;
-            transition: background-color 0.3s ease;
-        }
-        .btn-primary:hover {
-            background-color: #0056b3;
-            border-color: #0056b3;
-        }
-        .form-control, .form-select {
-            border-radius: 8px;
-        }
-        .table-hover tbody tr:hover {
-            background-color: #e2e6ea;
-        }
-    </style>
 </head>
 <body>
-    <footer class="footer mt-auto py-3 bg-light">
+    <footer class="footer mt-auto py-3">
         <div class="container-fluid text-center">
             <span class="text-muted">&copy; <?php echo date("Y"); ?> MB Logistics POS. All rights reserved.</span>
+            <br>
+            <span class="text-muted" style="font-size:0.95em;">Developed by Payvia POS System</span>
         </div>
     </footer>
 

@@ -15,6 +15,9 @@ if (!isLoggedIn()) {
 $user_region = $_SESSION['region']; // Get the logged-in user's region
 $all_regions = get_regions($conn); // Fetch all regions from the database
 
+// Close connection for create voucher page (will be reopened by process_voucher if needed)
+mysqli_close($conn);
+
 ?>
 
 <?php include 'includes/header.php'; // Include the common header HTML ?>
@@ -136,6 +139,31 @@ $all_regions = get_regions($conn); // Fetch all regions from the database
                 <div class="col-md-4">
                     <label for="total_amount" class="form-label">Total Amount</label>
                     <input type="text" class="form-control" id="total_amount" name="total_amount" readonly>
+                </div>
+            </div>
+
+            <div class="row g-3 mt-3">
+                <div class="col-md-4">
+                    <label for="currency" class="form-label">Currency</label>
+                    <select class="form-select" id="currency" name="currency" required>
+                        <option value="MMK">MMK (Myanmar Kyat)</option>
+                        <option value="RM">RM (Malaysian Ringgit)</option>
+                        <option value="Baht">Baht (Thai Baht)</option>
+                        <option value="USD">USD (US Dollar)</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label for="delivery_type" class="form-label">Delivery Type</label>
+                    <select class="form-select" id="delivery_type" name="delivery_type" required>
+                        <option value="">Select Delivery Type</option>
+                        <option value="Sent with letter">Sent with letter</option>
+                        <option value="Take in company">Take in company</option>
+                        <option value="Delivery to homes">Delivery to homes</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label for="notes" class="form-label">Notes</label>
+                    <textarea class="form-control" id="notes" name="notes" rows="1"></textarea>
                 </div>
             </div>
 

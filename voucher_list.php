@@ -34,6 +34,8 @@ $sql = "SELECT
             v.receiver_name,
             v.weight_kg,
             v.total_amount,
+            v.currency, /* Fetch currency from vouchers table */
+            v.delivery_type, /* Fetch delivery_type */
             v.created_at,
             s.status,
             s.current_location_region,
@@ -198,6 +200,8 @@ mysqli_close($conn); // Close the database connection
                     <th>Receiver Name</th>
                     <th>Weight (KG)</th>
                     <th>Total Amount</th>
+                    <th>Currency</th> <!-- Added Currency column -->
+                    <th>Delivery Type</th> <!-- Added Delivery Type column -->
                     <th>Current Status</th>
                     <th>Current Location</th>
                     <th>Created By</th>
@@ -208,7 +212,7 @@ mysqli_close($conn); // Close the database connection
             <tbody>
                 <?php if (empty($vouchers)): ?>
                     <tr>
-                        <td colspan="12" class="text-center">No vouchers found matching your criteria.</td>
+                        <td colspan="14" class="text-center">No vouchers found matching your criteria.</td>
                     </tr>
                 <?php else: ?>
                     <?php foreach ($vouchers as $voucher): ?>
@@ -219,7 +223,9 @@ mysqli_close($conn); // Close the database connection
                             <td><?php echo htmlspecialchars($voucher['sender_name']); ?></td>
                             <td><?php echo htmlspecialchars($voucher['receiver_name']); ?></td>
                             <td><?php echo htmlspecialchars($voucher['weight_kg']); ?></td>
-                            <td>$<?php echo number_format($voucher['total_amount'], 2); ?></td>
+                            <td><?php echo number_format($voucher['total_amount'], 2); ?></td>
+                            <td><?php echo htmlspecialchars($voucher['currency']); ?></td> <!-- Display currency -->
+                            <td><?php echo htmlspecialchars($voucher['delivery_type']); ?></td> <!-- Display delivery type -->
                             <td><span class="badge <?php
                                 switch ($voucher['status']) {
                                     case 'PENDING_ORIGIN_PICKUP': echo 'bg-warning text-dark'; break;

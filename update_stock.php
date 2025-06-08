@@ -1,173 +1,137 @@
 <?php
 // mb_logistics/update_stock.php
 
-session_start(); // Start the session to access session variables
+session_start(); // Start session to access session variables
 
 // Include necessary files
-require_once 'config/config.php'; // For database connection and configuration
-require_once 'includes/functions.php'; // For isLoggedIn(), redirectToLogin(), and sanitize_input()
+require_once 'config/config.php';
+require_once 'includes/functions.php';
 
-// Check if the user is logged in, otherwise redirect to login page
+// Redirect if not logged in
 if (!isLoggedIn()) {
     redirectToLogin();
 }
 
-// Process form data only if it's a POST request
+// Only handle POST request
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    // Sanitize and validate inputs
+    // Sanitize inputs
     $stock_id = sanitize_input($_POST['stock_id']);
     $new_status = sanitize_input($_POST['new_status']);
-    // new_location_region indicates where the item is now after the status update.
-    // This value is passed from the modal select.
     $new_location_region = sanitize_input($_POST['new_location_region']);
-    $user_region = $_SESSION['region']; // Get the region of the logged-in user
+    $user_region = $_SESSION['region'];
 
-    // Input validation: ensure critical data is not empty
+    // Check required fields
     if (empty($stock_id) || empty($new_status) || empty($new_location_region)) {
-        $_SESSION['error_message'] = "Invalid request. Missing data for stock update.";
-        header("location: stock.php"); // Redirect back with an error message
+        $_SESSION['error_message'] = "Missing stock update data.";
+        header("Location: stock.php");
         exit;
     }
 
-    // Fetch current stock details to validate transition and user permissions
-    $current_stock = null;
-    $sql_fetch = "SELECT s.status, s.current_location_region, v.origin_region, v.destination_region
-                  FROM stock s JOIN vouchers v ON s.voucher_id = v.id WHERE s.id = ?";
-    if ($stmt_fetch = mysqli_prepare($conn, $sql_fetch)) {
-        mysqli_stmt_bind_param($stmt_fetch, "i", $stock_id); // Bind stock ID
-        mysqli_stmt_execute($stmt_fetch); // Execute statement
-        $result_fetch = mysqli_stmt_get_result($stmt_fetch); // Get result set
-        $current_stock = mysqli_fetch_assoc($result_fetch); // Fetch the associative array
-        mysqli_stmt_close($stmt_fetch); // Close the statement
-    }
+    // Fetch stock info
+    $sql = "SELECT s.status, s.current_location_region, v.origin_region, v.destination_region
+            FROM stock s
+            JOIN vouchers v ON s.voucher_id = v.id
+            WHERE s.id = ?";
+    $stmt = mysqli_prepare($conn, $sql);
+    mysqli_stmt_bind_param($stmt, "i", $stock_id);
+    mysqli_stmt_execute($stmt);
+    $result = mysqli_stmt_get_result($stmt);
+    $stock = mysqli_fetch_assoc($result);
+    mysqli_stmt_close($stmt);
 
-    // If stock item not found or no data fetched, it's an invalid ID or permission issue
-    if (!$current_stock) {
-        $_SESSION['error_message'] = "Stock item not found or you do not have permission to access it.";
-        header("location: stock.php");
+    if (!$stock) {
+        $_SESSION['error_message'] = "Stock not found.";
+        header("Location: stock.php");
         exit;
     }
 
-    $old_status = $current_stock['status']; // Current status from DB
-    $current_location = $current_stock['current_location_region']; // Current physical location from DB
-    $origin_region = $current_stock['origin_region']; // Original region of the voucher
-    $destination_region = $current_stock['destination_region']; // Destination region of the voucher
+    // Extract stock info
+    $old_status = $stock['status'];
+    $current_location = $stock['current_location_region'];
+    $origin = $stock['origin_region'];
+    $destination = $stock['destination_region'];
 
-    $is_authorized = false; // Flag to check if the current user is authorized to perform this update
-
-    // Authorization logic:
+    // Permission check
+    $is_authorized = false;
     if ($user_region === 'ADMIN') {
-        // Admin user can update any stock item, given it's a valid status transition
         $is_authorized = true;
     } else {
-        // Regular user authorization:
-        // 1. User can update if the item is currently in their region AND it's not already delivered or returned.
-        if ($current_location == $user_region && $old_status != 'DELIVERED' && $old_status != 'RETURNED') {
+        if ($current_location === $user_region && !in_array($old_status, ['DELIVERED', 'RETURNED'])) {
             $is_authorized = true;
-        }
-        // 2. User from origin region can update PENDING_ORIGIN_PICKUP to IN_TRANSIT or RETURNED
-        if ($origin_region == $user_region && $old_status == 'PENDING_ORIGIN_PICKUP' &&
-            ($new_status == 'IN_TRANSIT' || $new_status == 'RETURNED')) {
+        } elseif ($user_region === $origin && $old_status === 'PENDING_ORIGIN_PICKUP' && in_array($new_status, ['IN_TRANSIT', 'RETURNED'])) {
             $is_authorized = true;
-        }
-        // 3. User from destination region can update IN_TRANSIT to ARRIVED_PENDING_RECEIVE
-        if ($destination_region == $user_region && $old_status == 'IN_TRANSIT' &&
-            $new_status == 'ARRIVED_PENDING_RECEIVE') {
+        } elseif ($user_region === $destination && $old_status === 'IN_TRANSIT' && $new_status === 'ARRIVED_PENDING_RECEIVE') {
             $is_authorized = true;
-        }
-        // If the item is already ARRIVED_PENDING_RECEIVE, only the destination region can mark as DELIVERED/RETURNED
-        if ($old_status == 'ARRIVED_PENDING_RECEIVE' && $current_location == $user_region &&
-            ($new_status == 'DELIVERED' || $new_status == 'RETURNED')) {
+        } elseif ($user_region === $destination && $old_status === 'ARRIVED_PENDING_RECEIVE' && in_array($new_status, ['DELIVERED', 'RETURNED'])) {
             $is_authorized = true;
         }
     }
 
-    // If not authorized, set error and redirect
     if (!$is_authorized) {
-        $_SESSION['error_message'] = "You are not authorized to update the status of this item from its current state/location.";
-        header("location: stock.php");
+        $_SESSION['error_message'] = "Not authorized to change this stock.";
+        header("Location: stock.php");
         exit;
     }
 
-    // Validate status transition (this is a simplified logic, real-world apps might need a state machine)
-    $valid_transition = false;
-    switch ($old_status) {
-        case 'PENDING_ORIGIN_PICKUP':
-            if ($new_status == 'IN_TRANSIT' || $new_status == 'RETURNED') { $valid_transition = true; }
-            // Admin specific transitions
-            if ($user_region === 'ADMIN' && ($new_status == 'ARRIVED_PENDING_RECEIVE' || $new_status == 'DELIVERED')) { $valid_transition = true; }
-            break;
-        case 'IN_TRANSIT':
-            if ($new_status == 'ARRIVED_PENDING_RECEIVE') { $valid_transition = true; }
-            // Admin specific transitions
-            if ($user_region === 'ADMIN' && ($new_status == 'DELIVERED' || $new_status == 'RETURNED')) { $valid_transition = true; }
-            break;
-        case 'ARRIVED_PENDING_RECEIVE':
-            if ($new_status == 'DELIVERED' || $new_status == 'RETURNED') { $valid_transition = true; }
-            break;
-        // DELIVERED and RETURNED are final states, no further transitions are allowed
+    // Validate status transition
+    $valid = false;
+    if ($old_status === 'PENDING_ORIGIN_PICKUP' && in_array($new_status, ['IN_TRANSIT', 'RETURNED'])) {
+        $valid = true;
+    } elseif ($old_status === 'IN_TRANSIT' && $new_status === 'ARRIVED_PENDING_RECEIVE') {
+        $valid = true;
+    } elseif ($old_status === 'ARRIVED_PENDING_RECEIVE' && in_array($new_status, ['DELIVERED', 'RETURNED'])) {
+        $valid = true;
     }
 
-    // If the selected new status is not a valid transition from the old status, set error and redirect
-    if (!$valid_transition) {
-        $_SESSION['error_message'] = "Invalid status transition: Cannot change from " . htmlspecialchars(str_replace('_', ' ', $old_status)) . " to " . htmlspecialchars(str_replace('_', ' ', $new_status)) . ".";
-        header("location: stock.php");
+    // Admin additional transitions
+    if ($user_region === 'ADMIN') {
+        if ($old_status === 'PENDING_ORIGIN_PICKUP' && in_array($new_status, ['ARRIVED_PENDING_RECEIVE', 'DELIVERED'])) {
+            $valid = true;
+        } elseif ($old_status === 'IN_TRANSIT' && in_array($new_status, ['DELIVERED', 'RETURNED'])) {
+            $valid = true;
+        }
+    }
+
+    if (!$valid) {
+        $_SESSION['error_message'] = "Invalid status transition: $old_status → $new_status.";
+        header("Location: stock.php");
         exit;
     }
 
-    // Determine the new `current_location_region` based on the status update
-    // This is a crucial part of tracking the physical location of the item.
-    $final_location_for_update = $current_location; // Default: location doesn't change unless specified
-
-    if ($new_status == 'IN_TRANSIT') {
-        // When an item goes IN_TRANSIT, it is leaving the origin.
-        // Its conceptual location is "between" origin and destination.
-        // For current_location_region, it often remains at the origin until it physically arrives.
-        // Or, if your system tracks hubs, it might go to a transit hub.
-        // For this simple model, let's keep it at the origin region until it is marked as ARRIVED.
-        $final_location_for_update = $origin_region; // Stays at origin until arrival
-    } elseif ($new_status == 'ARRIVED_PENDING_RECEIVE') {
-        // When it arrives, its location becomes the destination region.
-        $final_location_for_update = $destination_region;
-    } elseif ($new_status == 'DELIVERED' || $new_status == 'RETURNED') {
-        // If delivered or returned, it implies the final action happened at the current_location.
-        // So, the location remains where it was last processed (e.g., destination for delivery, current for return from transit/arrival).
-        $final_location_for_update = $new_location_region; // Use the value from the modal's current location select
+    // Determine new location
+    $final_location = $current_location;
+    if ($new_status === 'IN_TRANSIT') {
+        $final_location = $origin;
+    } elseif ($new_status === 'ARRIVED_PENDING_RECEIVE') {
+        $final_location = $destination;
+    } elseif (in_array($new_status, ['DELIVERED', 'RETURNED'])) {
+        $final_location = $new_location_region;
     }
 
-    // Start a database transaction for the update operation
+    // Transaction
     mysqli_begin_transaction($conn);
     try {
-        // Update the stock status and current_location_region in the database
-        $sql_update = "UPDATE stock SET status = ?, current_location_region = ?, last_status_update_at = NOW() WHERE id = ?";
-        if ($stmt_update = mysqli_prepare($conn, $sql_update)) {
-            mysqli_stmt_bind_param($stmt_update, "ssi", $new_status, $final_location_for_update, $stock_id); // Bind parameters
-            if (mysqli_stmt_execute($stmt_update)) {
-                $_SESSION['success_message'] = "Stock status updated successfully to " . htmlspecialchars(str_replace('_', ' ', $new_status)) . "!";
-            } else {
-                throw new Exception("Error updating stock status: " . mysqli_stmt_error($stmt_update));
-            }
-            mysqli_stmt_close($stmt_update); // Close the statement
+        $update_sql = "UPDATE stock SET status = ?, current_location_region = ?, last_status_update_at = NOW() WHERE id = ?";
+        $stmt = mysqli_prepare($conn, $update_sql);
+        mysqli_stmt_bind_param($stmt, "ssi", $new_status, $final_location, $stock_id);
+        if (mysqli_stmt_execute($stmt)) {
+            $_SESSION['success_message'] = "Stock updated to " . str_replace('_', ' ', $new_status) . ".";
         } else {
-            throw new Exception("Database query preparation failed: " . mysqli_error($conn));
+            throw new Exception("Execution failed: " . mysqli_stmt_error($stmt));
         }
-
-        mysqli_commit($conn); // Commit the transaction if everything was successful
-
+        mysqli_stmt_close($stmt);
+        mysqli_commit($conn);
     } catch (Exception $e) {
-        mysqli_rollback($conn); // Rollback the transaction on error
-        $_SESSION['error_message'] = "Error: " . $e->getMessage();
-        error_log("Stock update transaction failed: " . $e->getMessage()); // Log detailed error
-    } finally {
-        mysqli_close($conn); // Close the database connection
+        mysqli_rollback($conn);
+        $_SESSION['error_message'] = "Update failed: " . $e->getMessage();
+        error_log("Update error: " . $e->getMessage());
     }
 
-    header("location: stock.php"); // Redirect back to the stock view page
-    exit; // Terminate script execution
-
+    mysqli_close($conn);
+    header("Location: stock.php");
+    exit;
 } else {
-    // If the request method is not POST, redirect to stock page
-    header("location: stock.php");
+    header("Location: stock.php");
     exit;
 }
 ?>

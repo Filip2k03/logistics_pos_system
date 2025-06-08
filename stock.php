@@ -223,18 +223,7 @@ mysqli_close($conn); // Close the database connection
                                 }
                                 ?>
                                 <?php if ($can_update): ?>
-                                    <button type="button" class="btn btn-sm btn-info"
-                                            data-bs-toggle="modal"
-                                            data-bs-target="#updateStockModal"
-                                            data-stock-id="<?php echo $stock['stock_id']; ?>"
-                                            data-current-status="<?php echo $stock['status']; ?>"
-                                            data-origin-region="<?php echo $stock['origin_region']; ?>"
-                                            data-destination-region="<?php echo $stock['destination_region']; ?>"
-                                            data-current-location="<?php echo $stock['current_location_region']; ?>">
-                                        Update Status
-                                    </button>
-                                <?php else: ?>
-                                    <!-- <button type="button" class="btn btn-sm btn-secondary" disabled>No Action</button> -->
+                                    <a href="update_status.php?stock_id=<?php echo $stock['stock_id']; ?>" class="btn btn-sm btn-primary">Update Status</a>
                                 <?php endif; ?>
                             </td>
                         </tr>
@@ -394,19 +383,14 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Handle form submission via custom modal confirmation
+    // Handle form submission via browser confirmation
     document.getElementById('updateStockForm').addEventListener('submit', function(e) {
         e.preventDefault(); // Prevent default form submission initially
 
-        // Show the custom confirmation modal
-        showConfirmModal(function(confirmed) {
-            if (confirmed) {
-                // If user confirms, programmatically submit the form
-                e.target.submit();
-            } else {
-                // If user cancels, do nothing or close the modal if it's still open
-            }
-        });
+        // Use browser's confirm dialog
+        if (window.confirm('Are you sure you want to update the status of this stock item?')) {
+            e.target.submit();
+        }
     });
 });
 </script>

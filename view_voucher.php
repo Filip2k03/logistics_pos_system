@@ -22,6 +22,7 @@ if ($voucher_id > 0) {
                 v.sender_name, v.sender_phone, v.sender_address,
                 v.receiver_name, v.receiver_phone, v.receiver_address,
                 v.payment_method, v.weight_kg, v.price_per_kg_at_voucher, v.total_amount,
+                v.currency, v.delivery_type, v.notes, /* Fetch currency, delivery_type, notes */
                 v.created_at,
                 s.status, s.current_location_region, s.last_status_update_at
             FROM
@@ -229,8 +230,8 @@ mysqli_close($conn);
                                 <p><strong>Destination Region:</strong> <?php echo htmlspecialchars($voucher_data['destination_region']); ?></p>
                                 <p><strong>Payment Method:</strong> <?php echo htmlspecialchars($voucher_data['payment_method']); ?></p>
                                 <p><strong>Weight (KG):</strong> <?php echo htmlspecialchars($voucher_data['weight_kg']); ?> KG</p>
-                                <p><strong>Price per KG:</strong> $<?php echo number_format($voucher_data['price_per_kg_at_voucher'], 2); ?></p>
-                                <p><strong>Total Amount:</strong> <strong>$<?php echo number_format($voucher_data['total_amount'], 2); ?></strong></p>
+                                <p><strong>Price per KG:</strong> <?php echo $voucher_data['currency'] . ' ' . number_format($voucher_data['price_per_kg_at_voucher'], 2); ?></p>
+                                <p><strong>Total Amount:</strong> <strong><?php echo $voucher_data['currency'] . ' ' . number_format($voucher_data['total_amount'], 2); ?></strong></p>
                             </div>
                             <div class="col-md-6 voucher-info">
                                 <h5>Tracking Information</h5>
@@ -238,6 +239,10 @@ mysqli_close($conn);
                                 <p><strong>Current Location:</strong> <?php echo htmlspecialchars($voucher_data['current_location_region']); ?></p>
                                 <p><strong>Last Status Update:</strong> <?php echo date('Y-m-d H:i', strtotime($voucher_data['last_status_update_at'])); ?></p>
                                 <p><strong>Voucher Created On:</strong> <?php echo date('Y-m-d H:i', strtotime($voucher_data['created_at'])); ?></p>
+                                <p><strong>Delivery Type:</strong> <?php echo htmlspecialchars($voucher_data['delivery_type']); ?></p>
+                                <?php if (!empty($voucher_data['notes'])): ?>
+                                <p><strong>Notes:</strong> <?php echo nl2br(htmlspecialchars($voucher_data['notes'])); ?></p>
+                                <?php endif; ?>
                             </div>
                         </div>
 

@@ -1,7 +1,17 @@
+:root {
+    --primary-color: #007bff;
+    --background-color: #f8f9fa;
+    --text-color: #212529;
+    --navbar-bg: #d0db6a;
+    --navbar-text: #fff;
+}
 body {
+    font-family: 'Inter', sans-serif;
     min-height: 100vh;
     display: flex;
     flex-direction: column;
+    background-color: var(--background-color);
+    color: var(--text-color);
 }
 main {
     flex: 1;
@@ -39,4 +49,194 @@ main {
     right: 20px;
     z-index: 1050;
     min-width: 250px;
+}
+body.dark-mode {
+    --primary-color: #0d6efd;
+    --background-color: #212529;
+    --text-color: #f8f9fa;
+    --navbar-bg: #23272b;
+    --navbar-text: #f8f9fa;
+    background-color: var(--background-color);
+    color: var(--text-color);
+}
+
+/* Navbar and UI styles */
+.navbar {
+    background-color: #343a40 !important; /* Dark background for navbar */
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    padding: 0.8rem 1rem;
+}
+.navbar .nav-link, .navbar .navbar-brand {
+    color: #ffffff !important;
+}
+.navbar .nav-link:hover {
+    color: #adb5bd !important;
+}
+.container-fluid {
+    padding-top: 20px;
+}
+.card {
+    border-radius: 15px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    background-color: #fff;
+    color: #212529;
+}
+body.dark-mode .login-container,
+body.dark-mode .card {
+    background-color: #23272b;
+    color: #f8f9fa;
+}
+body.dark-mode .card {
+    background-color: #23272b;
+    color: #f8f9fa;
+}
+.btn-primary {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+    border-radius: 8px;
+    transition: background-color 0.3s ease;
+    color: #fff;
+}
+.btn-primary:hover {
+    background-color: #0056b3;
+    border-color: #0056b3;
+}
+.form-control, .form-select {
+    border-radius: 8px;
+    background-color: #fff;
+    color: #212529;
+}
+body.dark-mode .form-control,
+body.dark-mode .form-select {
+    background-color: #23272b;
+    color: #f8f9fa;
+    border-color: #444;
+}
+
+/* Table styles for light and dark mode */
+.table {
+    background-color: var(--background-color);
+    color: var(--text-color);
+}
+.table thead {
+    background-color: var(--navbar-bg, #343a40);
+    color: var(--navbar-text, #fff);
+}
+.table-striped > tbody > tr:nth-of-type(odd) {
+    background-color: rgba(0,0,0,0.03); /* subtle for light */
+}
+body.dark-mode .table-striped > tbody > tr:nth-of-type(odd) {
+    background-color: rgba(255,255,255,0.03); /* subtle for dark */
+}
+.table-hover tbody tr:hover {
+    background-color: #e2e6ea;
+    color: var(--text-color);
+}
+body.dark-mode .table-hover tbody tr:hover {
+    background-color: #343a40;
+    color: var(--text-color);
+}
+.table td, .table th {
+    vertical-align: middle;
+    border-color: #dee2e6;
+}
+body.dark-mode .table td, 
+body.dark-mode .table th {
+    border-color: #444;
+}
+.table-dark th, .table-dark td, .table-dark thead th {
+    background-color: var(--navbar-bg, #343a40) !important;
+    color: var(--navbar-text, #fff) !important;
+}
+body.dark-mode .table-dark th, 
+body.dark-mode .table-dark td, 
+body.dark-mode .table-dark thead th {
+    background-color: var(--navbar-bg, #23272b) !important;
+    color: var(--navbar-text, #f8f9fa) !important;
+}
+
+/* Header and Footer styles for light/dark mode */
+header, footer, .navbar {
+    background-color: var(--navbar-bg, #343a40) !important;
+    color: var(--navbar-text, #fff) !important;
+}
+footer {
+    padding: 1rem 0;
+    text-align: center;
+    font-size: 1rem;
+    background-color: var(--navbar-bg, #343a40);
+    color: var(--navbar-text, #fff);
+}
+
+/* Add to existing styles */
+.navbar-brand {
+    font-weight: 700;
+    font-size: 1.6rem;
+    letter-spacing: -0.5px;
+    display: flex;
+    align-items: center;
+    transition: all 0.3s ease;
+}
+
+.navbar-brand svg {
+    transition: transform 0.3s ease;
+}
+
+.navbar-brand:hover svg {
+    transform: translateX(5px);
+}
+
+.nav-item .nav-link {
+    display: flex;
+    align-items: center;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.nav-item .nav-link:hover {
+    background-color: rgba(255,255,255,0.15);
+    transform: translateY(-2px);
+}
+
+.nav-item .nav-link i {
+    font-size: 1.2rem;
+    margin-right: 0.5rem;
+}
+
+/* Dark mode adjustments */
+body.dark-mode .nav-item .nav-link:hover {
+    background-color: rgba(255,255,255,0.08);
+}
+
+/* Styles for printing */
+@media print {
+    .navbar, .btn, .alert, .card-header.bg-primary {
+        display: none !important; /* Hide navigation, buttons, alerts, and blue card header during print */
+    }
+    .container-fluid {
+        padding: 0 !important; /* Remove padding for print */
+        margin: 0 !important; /* Remove margin for print */
+    }
+    body {
+        background-color: #fff !important; /* White background for print */
+        color: #000 !important; /* Black text for print */
+    }
+    .card {
+        box-shadow: none !important;
+        border: 1px solid #ccc !important;
+        border-radius: 0 !important;
+        margin: 0 !important;
+        padding: 10px !important;
+    }
+    /* Specific styles for voucher print */
+    .voucher-details p {
+        margin-bottom: 5px;
+    }
+    .voucher-details h5 {
+        margin-top: 15px;
+        margin-bottom: 8px;
+        border-bottom: 1px dashed #ccc;
+        padding-bottom: 5px;
+    }
 }

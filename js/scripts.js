@@ -98,3 +98,32 @@ function showConfirmModal(callback) {
         this.dataset.clicked = 'true'; // Mark that "Yes" was clicked
     });
 }
+
+// Light and dark mode toggle
+document.getElementById('theme-toggle').addEventListener('click', function() {
+    document.body.classList.toggle('dark-mode');
+    const icon = document.getElementById('theme-icon');
+    if(document.body.classList.contains('dark-mode')) {
+        icon.classList.remove('bi-moon');
+        icon.classList.add('bi-sun');
+    } else {
+        icon.classList.remove('bi-sun');
+        icon.classList.add('bi-moon');
+    }
+});
+
+// Function to handle form submission with confirmation
+function handleFormSubmission(formId, callback) {
+    const form = document.getElementById(formId);
+    if (!form) return;
+
+    form.addEventListener('submit', function(event) {
+        event.preventDefault(); // Prevent default form submission
+
+        showConfirmModal(function(confirmed) {
+            if (confirmed) {
+                callback(); // Call the provided callback function
+            }
+        });
+    });
+}
