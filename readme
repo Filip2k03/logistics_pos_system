@@ -9,7 +9,7 @@ Execute the SQL script provided in the mb_logistics.sql file. This will create t
 
 Important: The script also inserts initial data for regions (MM, ML, AUS, TH) and two sample users (mm_user and th_user).
 
-username: mm_user, password: password123, region: MM
+username: Myanmar, password: pass123, region: MM
 
 username: th_user, password: password123, region: TH
 
