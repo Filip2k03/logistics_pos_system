@@ -1,0 +1,153 @@
+How to Set Up and Use the MB Logistics POS System
+Follow these steps to get your POS system running:
+
+Database Setup:
+
+Open your MySQL client (e.g., phpMyAdmin, MySQL Workbench, or command line).
+
+Execute the SQL script provided in the mb_logistics.sql file. This will create the mb_logistics database and all necessary tables.
+
+Important: The script also inserts initial data for regions (MM, ML, AUS, TH) and two sample users (mm_user and th_user).
+
+username: mm_user, password: password123, region: MM
+
+username: th_user, password: password123, region: TH
+
+PHP Environment:
+
+Ensure you have a web server (like Apache or Nginx) with PHP installed.
+
+Make sure you have mysqli extension enabled in your PHP configuration.
+
+Project Files:
+
+Create a folder named mb_logistics in your web server's document root (e.g., C:\xampp\htdocs\ for XAMPP, /var/www/html/ for Apache on Linux).
+
+Inside mb_logistics, create the config, css, js, includes, and sql directories as shown in the file structure.
+
+Copy the respective code into each file.
+
+Database Configuration (config/config.php):
+
+Open mb_logistics/config/config.php.
+
+Update DB_USERNAME and DB_PASSWORD with your actual MySQL database credentials. If you are using XAMPP/WAMP, root and an empty password '' are common defaults.
+
+Access the System:
+
+Open your web browser and navigate to http://localhost/mb_logistics/ (or your specific server address).
+
+System Usage:
+Login:
+
+You'll be presented with the login page.
+
+Use the sample credentials provided:
+
+Username: mm_user, Password: password123 (for Myanmar region)
+
+Username: th_user, Password: password123 (for Thailand region)
+
+Upon successful login, you'll be redirected to the dashboard.
+
+Dashboard:
+
+This page provides links to key functionalities:
+
+Create New Voucher: To create a new shipment entry.
+
+View Stock: To check the status of all items.
+
+Delivery Pending Receive: To see items that are overdue for pickup.
+
+Create Voucher:
+
+The "Origin Region" will be pre-selected and locked to your logged-in user's region (e.g., 'MM' for mm_user).
+
+Choose a "Destination Region" (it cannot be the same as the origin).
+
+Fill in all sender and receiver details, payment method, and weight.
+
+The "Price per KG" will automatically populate based on the Origin Region, but you can manually adjust it.
+
+The "Total Amount" will automatically calculate (weight_kg * price_per_kg).
+
+Click "Create Voucher". A unique voucher number will be generated, and the item will be added to stock with the status "PENDING_ORIGIN_PICKUP".
+
+View Stock:
+
+This page displays all stock items relevant to your region (either originated from your region or currently located in your region).
+
+You can filter by "Status" or "Voucher Number".
+
+Update Status: You can update the status of items if they are in your region or if you are the origin region for certain transitions.
+
+Click "Update Status" next to a stock item.
+
+A modal will appear, showing the current status and allowing you to select valid next statuses. For example:
+
+PENDING_ORIGIN_PICKUP (at your origin): Can be updated to IN_TRANSIT or RETURNED.
+
+IN_TRANSIT (if you are the destination region): Can be updated to ARRIVED_PENDING_RECEIVE.
+
+ARRIVED_PENDING_RECEIVE (at your current location): Can be updated to DELIVERED or RETURNED.
+
+Confirm the update via the custom modal.
+
+Delivery Pending Receive:
+
+This page shows items that have been in "ARRIVED - PENDING RECEIVE" status at your current region for more than 9 months.
+
+This helps identify long-standing uncollected items.
+
+You can directly update the status of these items (e.g., mark them as DELIVERED or RETURNED) using the "Mark as Delivered/Returned" button, which also opens the status update modal.
+
+Logout:
+
+Click on your username in the navigation bar and select "Logout".
+
+Key Features Implemented:
+Regional Access: Users can only create vouchers from their designated region.
+
+Unique Voucher Numbers: Generated per region with distinct prefixes and sequential numbering.
+
+Real-time Price Calculation: total_amount is calculated automatically.
+
+Stock Tracking: Items are automatically added to stock upon voucher creation with an initial status.
+
+Role-Based Stock View: Users see stock relevant to their region (items they sent or received).
+
+Controlled Status Transitions: The system allows only valid status updates based on the item's current state and the user's region.
+
+"Delivery Pending Receive" Report: Helps identify stagnant inventory at the destination.
+
+User-Friendly Interface: Built with Bootstrap 5.3 for a responsive and modern design.
+
+Security Basics: Password hashing, prepared statements for database interactions, and basic session management.
+
+Further Enhancements (Beyond this Scope):
+Comprehensive User Roles: Implement different roles (e.g., admin, regional manager, operator) with distinct permissions.
+
+Tracking History: A separate table to log all status changes for each stock item.
+
+Notifications: Email/SMS notifications for status changes to sender/receiver.
+
+Search Functionality: More robust search on stock and voucher pages.
+
+Reporting: Generate various reports (e.g., daily vouchers, regional statistics).
+
+Admin Panel: A dedicated section for managing users, regions, and default prices.
+
+Error Logging: More robust error handling and logging.
+
+Advanced Stock Management: Features for moving items between regions before final delivery, inventory counts, etc.
+
+Barcode/QR Code Integration: For faster item identification.
+
+Frontend Validation: Add JavaScript validation to forms to provide immediate feedback.
+
+Payment Gateway Integration: For online payment methods.
+
+Authentication Improvements: Two-factor authentication, "forgot password" functionality.
+
+Responsive Images & Icons: While Bootstrap handles much of responsiveness, ensuring any added images are also responsive is important.
