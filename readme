@@ -151,3 +151,11 @@ Payment Gateway Integration: For online payment methods.
 Authentication Improvements: Two-factor authentication, "forgot password" functionality.
 
 Responsive Images & Icons: While Bootstrap handles much of responsiveness, ensuring any added images are also responsive is important.
+
+
+<!-- database -->
+
+database name= zpxcdpsz_pos_mb
+username = zpxcdpsz_filip
+password = 'T6#N1Hyezr#n.fSi'
+host
