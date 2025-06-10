@@ -1,7 +1,7 @@
 <?php
 // mb_logistics/index.php
 
-session_start();
+session_start(); // Start the session at the very beginning
 
 // Check if user is already logged in, redirect to dashboard
 if (isset($_SESSION['loggedin']) && $_SESSION['loggedin'] === true) {
@@ -61,7 +61,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                             // Password is correct, start a new session
                             session_regenerate_id(); // Regenerate session ID for security reasons
                             $_SESSION["loggedin"] = true; // Set logged in flag
-                            $_SESSION["id"] = $id;         // Store user ID
+                            $_SESSION["user_id"] = $id;    // Store user ID  (Corrected session variable name)
                             $_SESSION["username"] = $username; // Store username
                             $_SESSION["region"] = $region;     // Store user's region
 

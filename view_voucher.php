@@ -22,8 +22,8 @@ if ($voucher_id > 0) {
                 v.voucher_number, v.origin_region, v.destination_region,
                 v.sender_name, v.sender_phone, v.sender_address,
                 v.receiver_name, v.receiver_phone, v.receiver_address,
-                v.weight_kg, v.price_per_kg_at_voucher, v.total_amount,
-                v.currency,
+                v.weight_kg, v.price_per_kg_at_voucher, v.delivery_charge, v.total_amount,
+                v.currency, v.delivery_type,
                 v.created_at
             FROM
                 vouchers v
@@ -284,6 +284,14 @@ mysqli_close($conn);
                                 <td><?php echo $voucher_data['currency'] . ' ' . number_format($voucher_data['price_per_kg_at_voucher'], 2); ?></td>
                             </tr>
                             <tr>
+                                <th>Delivery Charge</th>
+                                <td><?php echo $voucher_data['currency'] . ' ' . number_format($voucher_data['delivery_charge'], 2); ?></td>
+                            </tr>
+                            <tr>
+                                <th>Delivery Type</th>
+                                <td><?php echo htmlspecialchars($voucher_data['delivery_type']); ?></td>
+                            </tr>
+                            <tr>
                                 <th>Total Amount</th>
                                 <td><strong><?php echo $voucher_data['currency'] . ' ' . number_format($voucher_data['total_amount'], 2); ?></strong></td>
                             </tr>
@@ -294,17 +302,19 @@ mysqli_close($conn);
                 <!-- Footer -->
                 <div class="footer-section">
                     <p>Thank you for choosing MB Logistics - Your trusted global shipping partner</p>
-                    <p>Printed On: <?php echo date('Y-m-d H:i:s'); ?> | www.mblogistics.com</p>
+                    <p>Printed On: <?php echo date('Y-m-d H:i:s'); ?> | www.mblogistics.express</p>
                 </div>
 
                 <!-- Important Notes -->
                 <div class="notes">
-                    <p><strong>Important Notes:</strong></p>
-                    <ol>
-                        <li>Items over 5kg may be charged separately.</li>
-                        <li>No illegal items (drugs, weapons, etc.) allowed.</li>
-                        <li>Use appropriate packaging and label your items clearly.</li>
-                    </ol>
+                    <p style="color: #dc3545; font-weight: bold;"><strong>Important Notes:</strong></p>
+    <ol style="background: #fff5f5; border-radius: 6px; padding: 18px 24px; border: 1px solid #ffeaea;">
+        <li>ဥပဒေနှင့်မလွတ်ကင်းသောပစ္စည်းများ လုံးဝ(လုံးဝ) လက်မခံပါ။</li>
+        <li>ပါဝင်ပစ္စည်းများအား မှန်ကန်စွာပြောပါ။ ကြိုတင်ကြေငြာထားခြင်းမရှိပဲ ခိုးထည့်သောပစ္စည်းများအတွက် တာဝန်မယူပါ။ ယင်းပစ္စည်းများနှင့်ပတ်သက်ပြီ ပြဿနာတစ်စုံတရာဖြစ်ပေါ်ပါက ပိုဆောင်သူဘက်မှတာဝန်ယူဖြေရှင်းရမည်။</li>
+        <li>ပစ္စည်းပိုဆောင်စဉ် လုံခြုံရေးအရ ဖွင့်ဖေါက်စစ်ဆေးမှုအား လက်ခံပေးရပါမည်။</li>
+        <li>အစားအသောက်နှင့် ကြိုးကျေလွယ်သောပစ္စည်းများ အပျက်အစီး တာဝန်မယူပါ။</li>
+        <li>သက်မှတ်KG နှုန်းထားများသည် ရုံးထုတ်ဈေးသာဖြစ်ပြီး တစ်ဖက်နိုင်ငံတွင် အရောက်ပိုလျှင် အရောက်ပိုခ ထပ်ပေးရပါမည်။</li>
+    </ol>
                 </div>
 
                 <!-- Signature Section -->

@@ -137,6 +137,13 @@ mysqli_close($conn);
                     <input type="number" step="0.01" class="form-control" id="price_per_kg" name="price_per_kg" min="0.00" required>
                 </div>
                 <div class="col-md-4">
+                    <label for="delivery_charge" class="form-label">Delivery & POS Charge</label>
+                    <input type="number" step="0.01" class="form-control" id="delivery_charge" name="delivery_charge" value="0" min="0" required>
+                </div>
+            </div>
+
+            <div class="row g-3 mt-3">
+                <div class="col-md-4">
                     <label for="total_amount" class="form-label">Total Amount</label>
                     <input type="text" class="form-control" id="total_amount" name="total_amount" readonly>
                 </div>
@@ -156,9 +163,9 @@ mysqli_close($conn);
                     <label for="delivery_type" class="form-label">Delivery Type</label>
                     <select class="form-select" id="delivery_type" name="delivery_type" required>
                         <option value="">Select Delivery Type</option>
-                        <option value="Sent with letter">Sent with letter</option>
+                        <option value="Sent with letter">POS</option>
                         <option value="Take in company">Take in company</option>
-                        <option value="Delivery to homes">Delivery to homes</option>
+                        <option value="Delivery to homes">KL Delivery</option>
                     </select>
                 </div>
                 <div class="col-md-4">
@@ -175,3 +182,19 @@ mysqli_close($conn);
 </div>
 
 <?php include 'includes/footer.php'; // Include the common footer HTML ?>
+
+<script>
+function updateTotal() {
+    const weight = parseFloat(document.getElementById('weight_kg').value) || 0;
+    const pricePerKg = parseFloat(document.getElementById('price_per_kg').value) || 0;
+    const deliveryCharge = parseFloat(document.getElementById('delivery_charge').value) || 0;
+    const total = (weight * pricePerKg) + deliveryCharge;
+    document.getElementById('total_amount').value = total.toFixed(2);
+}
+
+document.getElementById('weight_kg').addEventListener('input', updateTotal);
+document.getElementById('price_per_kg').addEventListener('input', updateTotal);
+document.getElementById('delivery_charge').addEventListener('input', updateTotal);
+
+document.addEventListener('DOMContentLoaded', updateTotal);
+</script>

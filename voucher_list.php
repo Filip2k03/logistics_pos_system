@@ -128,6 +128,21 @@ mysqli_close($conn); // Close the database connection
         <?php endif; ?>
     </h1>
 
+    <!-- Export to Excel Button -->
+    <div class="mb-3 d-flex justify-content-end">
+        <form action="export_voucher.php" method="get" class="d-flex gap-2" target="_blank">
+            <!-- Pass current filters to export -->
+            <input type="hidden" name="voucher_number" value="<?php echo htmlspecialchars($filter_voucher_number); ?>">
+            <input type="hidden" name="origin_region" value="<?php echo htmlspecialchars($filter_origin_region); ?>">
+            <input type="hidden" name="destination_region" value="<?php echo htmlspecialchars($filter_destination_region); ?>">
+            <input type="hidden" name="start_date" value="<?php echo htmlspecialchars($filter_start_date); ?>">
+            <input type="hidden" name="end_date" value="<?php echo htmlspecialchars($filter_end_date); ?>">
+            <button type="submit" class="btn btn-success">
+                <i class="bi bi-file-earmark-excel"></i> Export to Excel
+            </button>
+        </form>
+    </div>
+
     <?php if (isset($_SESSION['success_message'])): ?>
         <div class="alert alert-success alert-dismissible fade show alert-fixed" role="alert">
             <?php echo $_SESSION['success_message']; unset($_SESSION['success_message']); ?>

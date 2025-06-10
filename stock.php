@@ -100,7 +100,17 @@ if (!isset($conn) || !$conn) {
     require 'config/config.php'; // Reconnect if necessary
 }
 
-mysqli_close($conn); // Close the database connection
+// Keep connection open until after header.php if get_regions() is in header or footer
+// For now, let's assume it's used only in the modal below, so we can close here.
+// But if `get_regions()` is called in `header.php` or `footer.php`, move this `mysqli_close($conn)`
+// after their includes.
+// For this example, I'll close it here as the regions are fetched for the modal *within* the HTML body.
+// It's generally better to manage connection lifecycle carefully.
+// If get_regions() is called in the modal, and the modal HTML is *after* this close,
+// then the connection would need to be re-established for the modal, which is what the current code does.
+// This is acceptable, but not ideal. A single connection throughout the script is usually better.
+// For this change, we'll keep the `mysqli_close($conn)` at the end of the script for consistency.
+
 ?>
 
 <?php include 'includes/header.php'; // Include the common header HTML ?>
@@ -152,89 +162,109 @@ mysqli_close($conn); // Close the database connection
         </form>
     </div>
 
+    <form method="post" action="update_stock_bulk.php" id="bulkUpdateForm">
     <div class="table-responsive">
         <table class="table table-striped table-hover">
             <thead class="table-dark">
                 <tr>
+                    <th><input type="checkbox" id="select_all"></th>
                     <th>Voucher No.</th>
                     <th>Origin</th>
                     <th>Destination</th>
-                    <th>Current Loc.</th>
+                    <th>
+                        Current Loc.
+                        <span class="text-muted" style="font-size:0.9em;">(Change)</span>
+                    </th>
                     <th>Status</th>
                     <th>Last Update</th>
                     <th>Sender</th>
                     <th>Receiver</th>
                     <th>Weight (KG)</th>
                     <th>Amount</th>
-                    <th>Action</th>
                 </tr>
             </thead>
             <tbody>
+                <?php
+                // Fetch all regions for the dropdowns once
+                $all_regions = get_regions($conn);
+                ?>
                 <?php if (empty($stocks)): ?>
                     <tr>
-                        <td colspan="11" class="text-center">No stock items found for your region or matching filters.</td>
+                        <td colspan="12" class="text-center">No stock items found for your region or matching filters.</td>
                     </tr>
                 <?php else: ?>
                     <?php foreach ($stocks as $stock): ?>
                         <tr>
+                            <td>
+                                <input type="checkbox" name="stock_ids[]" value="<?php echo $stock['stock_id']; ?>">
+                            </td>
                             <td><?php echo htmlspecialchars($stock['voucher_number']); ?></td>
                             <td><?php echo htmlspecialchars($stock['origin_region']); ?></td>
                             <td><?php echo htmlspecialchars($stock['destination_region']); ?></td>
-                            <td><?php echo htmlspecialchars($stock['current_location_region']); ?></td>
-                            <td><span class="badge <?php
-                                // Apply Bootstrap badge classes based on status for visual differentiation
-                                switch ($stock['status']) {
-                                    case 'PENDING_ORIGIN_PICKUP': echo 'bg-warning text-dark'; break;
-                                    case 'IN_TRANSIT': echo 'bg-info'; break;
-                                    case 'ARRIVED_PENDING_RECEIVE': echo 'bg-primary'; break;
-                                    case 'DELIVERED': echo 'bg-success'; break;
-                                    case 'RETURNED': echo 'bg-secondary'; break;
-                                    default: echo 'bg-light text-dark'; break; // Default style
-                                }
-                            ?>"><?php echo htmlspecialchars(str_replace('_', ' ', $stock['status'])); ?></span></td>
+                            <td>
+                                <select name="new_location_region[<?php echo $stock['stock_id']; ?>]" class="form-select form-select-sm" style="width:auto;display:inline-block;">
+                                    <?php
+                                    // Only show origin and destination region as options
+                                    foreach ($all_regions as $region) {
+                                        if (
+                                            $region['region_code'] === $stock['origin_region'] ||
+                                            $region['region_code'] === $stock['destination_region']
+                                        ) {
+                                            ?>
+                                            <option value="<?php echo htmlspecialchars($region['region_code']); ?>"
+                                                <?php if ($stock['current_location_region'] == $region['region_code']) echo 'selected'; ?>>
+                                                <?php echo htmlspecialchars($region['region_name']); ?>
+                                            </option>
+                                            <?php
+                                        }
+                                    }
+                                    ?>
+                                </select>
+                            </td>
+                            <td>
+                                <span class="badge <?php
+                                    switch ($stock['status']) {
+                                        case 'PENDING_ORIGIN_PICKUP': echo 'bg-warning text-dark'; break;
+                                        case 'IN_TRANSIT': echo 'bg-info'; break;
+                                        case 'ARRIVED_PENDING_RECEIVE': echo 'bg-primary'; break;
+                                        case 'DELIVERED': echo 'bg-success'; break;
+                                        case 'RETURNED': echo 'bg-secondary'; break;
+                                        default: echo 'bg-light text-dark'; break;
+                                    }
+                                ?>"><?php echo htmlspecialchars(str_replace('_', ' ', $stock['status'])); ?></span>
+                            </td>
                             <td><?php echo date('Y-m-d H:i', strtotime($stock['last_status_update_at'])); ?></td>
                             <td><?php echo htmlspecialchars($stock['sender_name']); ?></td>
                             <td><?php echo htmlspecialchars($stock['receiver_name']); ?></td>
                             <td><?php echo htmlspecialchars($stock['weight_kg']); ?></td>
                             <td>$<?php echo number_format($stock['total_amount'], 2); ?></td>
-                            <td class="d-flex flex-column flex-md-row gap-1">
-                                <a href="view_voucher.php?voucher_id=<?php echo $stock['voucher_db_id']; ?>" class="btn btn-sm btn-secondary">View Voucher</a>
-                                <?php
-                                $can_update = false;
-                                // Authorization logic for updating status:
-                                // If admin, they can update anything (valid transitions still apply)
-                                if ($user_region === 'ADMIN') {
-                                    $can_update = true;
-                                } else {
-                                    // Regular user logic:
-                                    // 1. The item's current location is the user's region AND it's not already delivered or returned.
-                                    if ($stock['current_location_region'] == $user_region &&
-                                        $stock['status'] != 'DELIVERED' && $stock['status'] != 'RETURNED') {
-                                        $can_update = true;
-                                    }
-                                    // 2. The item originated from the user's region AND its status is PENDING_ORIGIN_PICKUP.
-                                    if ($stock['origin_region'] == $user_region && $stock['status'] == 'PENDING_ORIGIN_PICKUP') {
-                                        $can_update = true;
-                                    }
-                                    // 3. The user is the destination region and the item is in transit.
-                                    if ($stock['destination_region'] == $user_region && $stock['status'] == 'IN_TRANSIT') {
-                                        $can_update = true;
-                                    }
-                                }
-                                ?>
-                                <?php if ($can_update): ?>
-                                    <a href="update_status.php?stock_id=<?php echo $stock['stock_id']; ?>" class="btn btn-sm btn-primary">Update Status</a>
-                                <?php endif; ?>
-                            </td>
                         </tr>
                     <?php endforeach; ?>
                 <?php endif; ?>
             </tbody>
         </table>
     </div>
+    <div class="d-flex align-items-center gap-2 mt-2">
+        <select name="bulk_new_status" class="form-select form-select-sm" style="width:auto;" id="bulkStatusSelect" required>
+            <option value="">Update Status for Selected</option>
+            <option value="IN_TRANSIT">In Transit</option>
+            <option value="ARRIVED_PENDING_RECEIVE">Arrived - Pending Receive</option>
+            <option value="DELIVERED">Delivered</option>
+            <option value="RETURNED">Returned</option>
+        </select>
+        <button type="submit" class="btn btn-primary" onclick="return confirm('Are you sure you want to update status for selected stock items?')">Update Selected</button>
+    </div>
+</form>
+<script>
+document.getElementById('select_all').addEventListener('change', function() {
+    const checkboxes = document.querySelectorAll('input[name="stock_ids[]"]');
+    for (const cb of checkboxes) {
+        cb.checked = this.checked;
+    }
+});
+</script>
 </div>
 
-<!-- Update Stock Status Modal -->
 <div class="modal fade" id="updateStockModal" tabindex="-1" aria-labelledby="updateStockModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content rounded-3 shadow">
@@ -253,28 +283,27 @@ mysqli_close($conn); // Close the database connection
                     <div class="mb-3">
                         <label for="new_status" class="form-label">Select New Status</label>
                         <select class="form-select" id="new_status" name="new_status" required>
-                            <!-- Options will be dynamically populated by JS based on current status and user region -->
-                        </select>
+                            </select>
                     </div>
                     <div class="mb-3">
-                         <label for="modal_current_location" class="form-label">Current Location (for status update)</label>
-                        <select class="form-select" id="modal_current_location" name="new_location_region" required>
-                             <?php
-                             // Get all regions for the modal dropdown. Re-fetching them to ensure $conn is active here.
-                             // Need to reopen connection temporarily or pass it if it was closed by stock.php
-                             // A better practice might be to keep $conn open until the end of the script or pass it around
-                             if (!isset($conn) || !$conn) {
-                                require 'config/config.php'; // Reconnect if necessary
-                             }
-                             $all_regions_for_modal = get_regions($conn); // Re-fetch or reuse if available from earlier scope
-                             foreach ($all_regions_for_modal as $region_mod) {
-                                 // Exclude 'ADMIN' as a physical location
-                                 if ($region_mod['region_code'] !== 'ADMIN') {
-                                     echo '<option value="' . htmlspecialchars($region_mod['region_code']) . '">' . htmlspecialchars($region_mod['region_name']) . '</option>';
-                                 }
-                             }
-                             ?>
-                        </select>
+                           <label for="modal_current_location" class="form-label">Current Location (for status update)</label>
+                         <select class="form-select" id="modal_current_location" name="new_location_region" required>
+                               <?php
+                               // Get all regions for the modal dropdown. Re-fetching them to ensure $conn is active here.
+                               // Need to reopen connection temporarily or pass it if it was closed by stock.php
+                               // A better practice might be to keep $conn open until the end of the script or pass it around
+                               if (!isset($conn) || !$conn) {
+                                   require 'config/config.php'; // Reconnect if necessary
+                               }
+                               $all_regions_for_modal = get_regions($conn); // Re-fetch or reuse if available from earlier scope
+                               foreach ($all_regions_for_modal as $region_mod) {
+                                   // Exclude 'ADMIN' as a physical location
+                                   if ($region_mod['region_code'] !== 'ADMIN') {
+                                       echo '<option value="' . htmlspecialchars($region_mod['region_code']) . '">' . htmlspecialchars($region_mod['region_name']) . '</option>';
+                                   }
+                               }
+                               ?>
+                         </select>
                     </div>
                 </div>
                 <div class="modal-footer flex-column border-top-0 px-4 pb-3">

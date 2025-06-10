@@ -83,3 +83,22 @@ INSERT INTO `vouchers` (`id`, `voucher_number`, `origin_region`, `destination_re
   (1, 'MD000001', 'MM', 'ML', 'Thu Ya', '9595959595', 'qwertyuiop', 'Kyaw', '34567', 'sdfghjk', 'Cash', 10.00, 10.00, 100.00, 3, '2025-06-08 02:54:46'),
   (2, 'MD000002', 'MM', 'AUS', 'Thu Ya', '09954480806', '40th streer', 'Thu Ya Kyaw', '09954480806', 'Yangon, Myanmar', 'Cash', 11.00, 9.00, 99.00, 3, '2025-06-08 03:08:06'),
   (3, 'MD000003', 'MM', 'ML', 'Thu Ya', '09954480806', '40th streer', 'Thu Ya Kyaw', '09954480806', 'Yangon, Myanmar', 'Cash', 5.00, 15.00, 75.00, 4, '2025-06-08 03:51:05');
+
+
+  CREATE TABLE expenses (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    amount DECIMAL(12,2) NOT NULL,
+    currency VARCHAR(10) NOT NULL,
+    description VARCHAR(255),
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+ALTER TABLE expenses
+ADD COLUMN date DATE NOT NULL AFTER id,
+ADD COLUMN region VARCHAR(50) NOT NULL AFTER date,
+ADD COLUMN created_by INT AFTER description;
+
+-- If you also need to store currency information, ensure your 'currency' column is sufficient.
+-- The PHP script currently doesn't use 'currency' in the display.
+
+ALTER TABLE `vouchers`
+ADD COLUMN `delivery_charge` DECIMAL(10,2) NOT NULL DEFAULT 0 AFTER `price_per_kg_at_voucher`;

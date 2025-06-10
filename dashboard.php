@@ -1,30 +1,52 @@
 <?php
-// mb_logistics/dashboard.php
+session_start();
 
-session_start(); // Start the session to access session variables
+require_once 'config/config.php';
+require_once 'includes/functions.php';
 
-// Include necessary files
-require_once 'config/config.php'; // For database connection
-require_once 'includes/functions.php'; // For isLoggedIn(), redirectToLogin(), get_daily_voucher_count(), get_monthly_profit()
-
-// Check if the user is logged in, otherwise redirect to login page
 if (!isLoggedIn()) {
     redirectToLogin();
 }
 
-// Get the logged-in user's region from the session
 $user_region = $_SESSION['region'];
 
-// Fetch daily voucher count and monthly profit
-// These functions already contain logic to filter by region if the user is not 'ADMIN'
+// Fetch daily voucher count (filtered by region)
 $daily_vouchers = get_daily_voucher_count($conn, $user_region);
-$monthly_profit = get_monthly_profit($conn, $user_region);
 
-// Close connection for dashboard page (will be reopened by other pages if needed)
+// Fetch profits by currency (only for ADMIN)
+$profits_by_currency = [];
+if ($user_region === 'ADMIN') {
+    $sql = "SELECT currency, SUM(total_amount) as profit
+            FROM vouchers
+            WHERE MONTH(created_at) = MONTH(CURRENT_DATE())
+              AND YEAR(created_at) = YEAR(CURRENT_DATE())
+            GROUP BY currency";
+    $result = mysqli_query($conn, $sql);
+    while ($row = mysqli_fetch_assoc($result)) {
+        $profits_by_currency[$row['currency']] = $row['profit'];
+    }
+} else {
+    // For non-admin, show only their region's profit in their currency
+    $sql = "SELECT currency, SUM(total_amount) as profit
+            FROM vouchers
+            WHERE (origin_region = ? OR destination_region = ?)
+              AND MONTH(created_at) = MONTH(CURRENT_DATE())
+              AND YEAR(created_at) = YEAR(CURRENT_DATE())
+            GROUP BY currency";
+    $stmt = mysqli_prepare($conn, $sql);
+    mysqli_stmt_bind_param($stmt, "ss", $user_region, $user_region);
+    mysqli_stmt_execute($stmt);
+    $result = mysqli_stmt_get_result($stmt);
+    while ($row = mysqli_fetch_assoc($result)) {
+        $profits_by_currency[$row['currency']] = $row['profit'];
+    }
+    mysqli_stmt_close($stmt);
+}
+
 mysqli_close($conn);
 ?>
 
-<?php include 'includes/header.php'; // Include the common header HTML ?>
+<?php include 'includes/header.php'; ?>
 
 <div class="container">
     <h1 class="mb-4 text-center">Dashboard for <?php echo htmlspecialchars($user_region); ?> Region</h1>
@@ -43,7 +65,7 @@ mysqli_close($conn);
     <?php endif; ?>
 
     <div class="row g-4 mb-4">
-        <!-- Daily Vouchers Card - Data is filtered by region in get_daily_voucher_count -->
+        <!-- Daily Vouchers Card -->
         <div class="col-md-6 col-lg-4">
             <div class="card text-center h-100 p-3 bg-light">
                 <div class="card-body">
@@ -52,15 +74,43 @@ mysqli_close($conn);
                 </div>
             </div>
         </div>
-        <!-- Monthly Profit Card - Data is filtered by region in get_monthly_profit -->
+        <!-- Profits by Currency Card (ADMIN only) -->
+        <?php if ($user_region === 'ADMIN'): ?>
         <div class="col-md-6 col-lg-4">
             <div class="card text-center h-100 p-3 bg-light">
                 <div class="card-body">
                     <h5 class="card-title text-primary">Monthly Profit (Current Month)</h5>
-                    <p class="display-4 text-dark">$<?php echo number_format($monthly_profit, 2); ?></p>
+                    <?php if (empty($profits_by_currency)): ?>
+                        <p class="text-muted">No data</p>
+                    <?php else: ?>
+                        <?php foreach ($profits_by_currency as $currency => $profit): ?>
+                            <p class="display-6 text-dark"><?php echo htmlspecialchars($currency) . ' ' . number_format($profit, 2); ?></p>
+                        <?php endforeach; ?>
+                        <a href="profits.php" class="btn btn-outline-primary btn-sm mt-2">View All Profits</a>
+                    <?php endif; ?>
                 </div>
             </div>
         </div>
+        <?php endif; ?>
+        <!-- Expenses Card (Visible to ALL users) -->
+        <div class="col-md-6 col-lg-4">
+            <div class="card text-center h-100 p-3 bg-light">
+                <div class="card-body">
+                    <h5 class="card-title text-danger">Add Expense</h5>
+                    <p class="card-text">Record a new delivery or business expense.</p>
+                    <a href="expenses.php" class="btn btn-danger">
+                        <i class="bi bi-cash-stack"></i> Add Expense
+                    </a>
+                    <?php if ($user_region === 'ADMIN'): ?>
+                    <hr>
+                    <a href="expense_list.php" class="btn btn-outline-danger btn-sm mt-2">
+                        <i class="bi bi-list-ul"></i> View Expense List
+                    </a>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </div>
+        <!-- Other dashboard cards ... -->
         <div class="col-md-6 col-lg-4">
             <div class="card text-center h-100 dashboard-card">
                 <div class="card-body">
@@ -97,8 +147,7 @@ mysqli_close($conn);
                 </div>
             </div>
         </div>
-        <!-- Add more cards for other functionalities if needed in the future -->
     </div>
 </div>
 
-<?php include 'includes/footer.php'; // Include the common footer HTML ?>
+<?php include 'includes/footer.php'; ?>
