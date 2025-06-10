@@ -147,16 +147,16 @@ function get_monthly_profit($conn, $user_region) {
  * @param mysqli $conn The database connection object.
  * @return array An array of regions, each containing 'region_code' and 'region_name'.
  */
-function get_regions($conn) {
-    $regions = [];
-    $sql = "SELECT region_code, region_name FROM regions";
-    $result = mysqli_query($conn, $sql);
-    if ($result) {
-        while ($row = mysqli_fetch_assoc($result)) {
-            $regions[] = $row;
-        }
-    }
-    return $regions;
-}
+// function get_regions($conn) {
+//     $regions = [];
+//     $sql = "SELECT region_code, region_name FROM regions";
+//     $result = mysqli_query($conn, $sql);
+//     if ($result) {
+//         while ($row = mysqli_fetch_assoc($result)) {
+//             $regions[] = $row;
+//         }
+//     }
+//     return $regions;
+// }
 
 ?>

@@ -2,7 +2,7 @@
     --primary-color: #007bff;
     --background-color: #f8f9fa;
     --text-color: #212529;
-    --navbar-bg: #d0db6a;
+    --navbar-bg: #ff8c00; /* Changed from #d0db6a to #ff8c00 */
     --navbar-text: #dce2c1;
 }
 body {
@@ -239,4 +239,9 @@ body.dark-mode .nav-item .nav-link:hover {
         border-bottom: 1px dashed #ccc;
         padding-bottom: 5px;
     }
+}
+
+body.dark-mode footer {
+    background-color: var(--navbar-bg, #ff8c00) !important;
+    color: var(--navbar-text, #f8f9fa) !important;
 }

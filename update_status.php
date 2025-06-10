@@ -24,12 +24,30 @@ if (!$result || mysqli_num_rows($result) === 0) {
 
 $stock = mysqli_fetch_assoc($result);
 
+// Fetch only origin and destination regions for the dropdown
+$regions = [];
+if (!empty($stock['voucher_id'])) {
+    $voucher_result = mysqli_query($conn, "SELECT origin_region, destination_region FROM vouchers WHERE id = " . intval($stock['voucher_id']));
+    if ($voucher_result && $voucher_row = mysqli_fetch_assoc($voucher_result)) {
+        $origin_region = $voucher_row['origin_region'];
+        $destination_region = $voucher_row['destination_region'];
+        // Get region names
+        $region_query = mysqli_query($conn, "SELECT region_code, region_name FROM regions WHERE region_code IN ('$origin_region', '$destination_region')");
+        if ($region_query) {
+            while ($row = mysqli_fetch_assoc($region_query)) {
+                $regions[] = $row;
+            }
+        }
+    }
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $new_status = sanitize_input($_POST['status']);
-    $update = mysqli_query($conn, "UPDATE stock SET status = '$new_status', last_status_update_at = NOW() WHERE id = $stock_id");
+    $new_location = sanitize_input($_POST['current_location_region']);
+    $update = mysqli_query($conn, "UPDATE stock SET status = '$new_status', current_location_region = '$new_location', last_status_update_at = NOW() WHERE id = $stock_id");
 
     if ($update) {
-        $_SESSION['success_message'] = "Status updated successfully!";
+        $_SESSION['success_message'] = "Status and location updated successfully!";
     } else {
         $_SESSION['error_message'] = "Failed to update status.";
     }
@@ -51,6 +69,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <option value="ARRIVED_PENDING_RECEIVE">Arrived - Pending Receive</option>
                 <option value="DELIVERED">Delivered</option>
                 <option value="RETURNED">Returned</option>
+            </select>
+        </div>
+        <div class="mb-3">
+            <label for="current_location_region" class="form-label">Current Location (Region)</label>
+            <select name="current_location_region" id="current_location_region" class="form-select" required>
+                <?php foreach ($regions as $region): ?>
+                    <option value="<?php echo htmlspecialchars($region['region_code']); ?>" <?php if ($stock['current_location_region'] == $region['region_code']) echo 'selected'; ?>>
+                        <?php echo htmlspecialchars($region['region_name']); ?>
+                    </option>
+                <?php endforeach; ?>
             </select>
         </div>
         <button type="submit" class="btn btn-primary">Update</button>

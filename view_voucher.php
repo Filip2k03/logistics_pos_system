@@ -1,12 +1,14 @@
 <?php
-// mb_logistics/view_voucher.php
+
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
 
 session_start();
 
 require_once 'config/config.php';
 require_once 'includes/functions.php';
 
-// Check if the user is logged in, otherwise redirect to login page
 if (!isLoggedIn()) {
     redirectToLogin();
 }
@@ -16,19 +18,15 @@ $voucher_data = null;
 $error_message = '';
 
 if ($voucher_id > 0) {
-    // Fetch voucher details
     $sql = "SELECT
                 v.voucher_number, v.origin_region, v.destination_region,
                 v.sender_name, v.sender_phone, v.sender_address,
                 v.receiver_name, v.receiver_phone, v.receiver_address,
-                v.payment_method, v.weight_kg, v.price_per_kg_at_voucher, v.total_amount,
-                v.currency, v.delivery_type, v.notes, /* Fetch currency, delivery_type, notes */
-                v.created_at,
-                s.status, s.current_location_region, s.last_status_update_at
+                v.weight_kg, v.price_per_kg_at_voucher, v.total_amount,
+                v.currency,
+                v.created_at
             FROM
                 vouchers v
-            JOIN
-                stock s ON v.id = s.voucher_id
             WHERE
                 v.id = ?";
 
@@ -41,17 +39,6 @@ if ($voucher_id > 0) {
 
         if (!$voucher_data) {
             $error_message = "Voucher not found or you do not have access to this voucher.";
-        } else {
-            // Further authorization: A regular user can only view vouchers
-            // if they are the origin or destination, or if the item is currently in their region.
-            $user_region = $_SESSION['region'];
-            if ($user_region !== 'ADMIN' &&
-                $voucher_data['origin_region'] !== $user_region &&
-                $voucher_data['destination_region'] !== $user_region &&
-                $voucher_data['current_location_region'] !== $user_region) {
-                $error_message = "You are not authorized to view this voucher.";
-                $voucher_data = null; // Clear data if not authorized
-            }
         }
     } else {
         $error_message = "Database query failed: " . mysqli_error($conn);
@@ -61,206 +48,282 @@ if ($voucher_id > 0) {
 }
 
 mysqli_close($conn);
-
 ?>
 
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=210mm, initial-scale=1.0">
     <title>Voucher - <?php echo $voucher_data ? htmlspecialchars($voucher_data['voucher_number']) : 'Details'; ?></title>
-    <!-- Bootstrap 5.3 CSS CDN -->
-    <link href="[https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css](https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css)" rel="stylesheet" xintegrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
-    <!-- Google Fonts - Inter -->
-    <link href="[https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap](https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap)" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
     <style>
         body {
             font-family: 'Inter', sans-serif;
             background-color: #f8f9fa;
         }
-        .navbar, .no-print {
-            display: block; /* Ensure visible on screen */
+        .voucher-print-container {
+            margin: 20px auto;
+            background: #fff;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.07);
+            padding: 32px 24px;
+            position: relative;
+            /*background-image: url('bg.jpg');*/
+            /*background-size: contain;*/
+            /*background-repeat: no-repeat;*/
+            /*background-position: center;*/
         }
-        /* Hide navbar and specific elements on print */
+        .watermark-mb {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 6rem;
+            font-weight: 900;
+            color: #2563eb;
+            opacity: 0.07;
+            white-space: nowrap;
+            pointer-events: none;
+            z-index: 0;
+            text-shadow: 2px 2px 16px #000, 0 0 2px #2563eb;
+            user-select: none;
+        }
+        .voucher-header,
+        .voucher-section,
+        .footer-section,
+        .notes,
+        .signature-section {
+            position: relative;
+            z-index: 1;
+        }
+        .voucher-header {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 24px;
+            flex-wrap: wrap;
+            text-align: left;
+            margin-bottom: 2rem;
+        }
+        .voucher-header .logo-col {
+            flex: 0 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .voucher-header .logo-col img {
+            width: 90px;
+            height: auto;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+            background: #fff;
+            padding: 4px;
+        }
+        .voucher-header .info-col {
+            flex: 1 1 200px;
+            min-width: 200px;
+            text-align: left;
+        }
+        .voucher-header h2 {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.25rem;
+            margin-top: 0;
+        }
+        .voucher-header h4 {
+            font-size: 1.2rem;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            margin-top: 0;
+        }
+        .voucher-header p {
+            margin-bottom: 0;
+            margin-top: 0.25rem;
+        }
+        .voucher-section-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #2563eb;
+            margin-bottom: 0.5rem;
+        }
+        .info-table {
+            width: 100%;
+            margin-bottom: 2rem;
+            border-collapse: collapse;
+        }
+        .info-table th, .info-table td {
+            border: 1px solid #e2e8f0;
+            padding: 10px 14px;
+            vertical-align: top;
+        }
+        .info-table th {
+            background: #f1f5f9;
+            width: 30%;
+            font-weight: 600;
+        }
+        .footer-section {
+            margin-top: 2.5rem;
+            text-align: center;
+            font-size: 1rem;
+            color: #64748b;
+            border-top: 1px dashed #e2e8f0;
+            padding-top: 1rem;
+        }
+        .notes {
+            margin-top: 2rem;
+        }
+        .signature-section {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 2rem;
+            gap: 10px;
+        }
+        .signature-box {
+            border-top: 1px solid #333;
+            width: 32%;
+            text-align: center;
+            padding-top: 10px;
+            font-size: 1rem;
+            min-height: 40px;
+        }
         @media print {
             body {
-                margin: 0;
-                padding: 0;
-                /* Force A4 size for the print content */
-                width: 210mm; /* A4 width */
-                height: 297mm; /* A4 height */
+                background: #fff !important;
+                
             }
-            .navbar, .no-print, footer, .alert {
-                display: none !important;
-            }
-            .container {
-                width: 100% !important; /* Full width for print */
-                padding: 0 !important;
-                margin: 0 !important;
-                max-width: none !important;
-            }
-            .card {
-                border: none !important; /* Remove card borders for print */
-                box-shadow: none !important;
-                padding: 0 !important;
-                margin: 0 !important;
-            }
-            /* Specific styling for the voucher content for print */
             .voucher-print-container {
-                width: 190mm; /* Slightly less than A4 to allow margins */
-                min-height: 277mm; /* Adjust height as needed for content */
-                margin: 10mm auto; /* Center on A4 paper with 10mm margins */
-                padding: 15mm; /* Inner padding for content */
-                border: 1px solid #ddd; /* Subtle border for the voucher itself */
-                position: relative;
-                overflow: hidden; /* Ensure background image doesn't bleed */
-                background-color: #fff; /* Ensure white background for print */
+            margin: 20px auto;
+            background: #fff;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.07);
+            padding: 32px 24px;
+            position: relative;
+                
             }
-
-            .company-logo-bg {
-                position: absolute;
-                top: 20px; /* Adjust as needed */
-                right: 20px; /* Adjust as needed */
-                width: 100px; /* Adjust logo size */
-                height: 100px; /* Adjust logo size */
-                background-image: url('[https://placehold.co/100x100/000000/FFFFFF?text=Logo](https://placehold.co/100x100/000000/FFFFFF?text=Logo)'); /* **YOUR COMPANY LOGO URL HERE** */
-                background-size: contain;
-                background-repeat: no-repeat;
-                background-position: center;
-                opacity: 0.8; /* Slightly transparent */
-                z-index: 1; /* Ensure logo is above text */
+            .watermark-mb {
+                font-size: 8rem;
+                opacity: 0.09;
             }
-
-            .voucher-header {
-                text-align: center;
-                margin-bottom: 20px;
-                position: relative; /* For z-index if needed */
-                z-index: 2; /* Ensure header is above logo */
-            }
-
-            .voucher-section {
-                margin-bottom: 20px;
-                padding-bottom: 10px;
-                border-bottom: 1px dashed #eee; /* Light dashed separator */
-                position: relative;
-                z-index: 2;
-            }
-            .voucher-section:last-child {
-                border-bottom: none;
-            }
-
-            .voucher-section h5 {
-                color: #333;
-                font-weight: 600;
-                margin-bottom: 10px;
-            }
-
-            .voucher-info p {
-                margin-bottom: 5px;
-                line-height: 1.4;
-                font-size: 0.95em;
-            }
-            .voucher-info strong {
-                font-weight: 700;
-            }
-            .voucher-info address {
-                white-space: pre-wrap; /* Preserve line breaks in address */
-            }
-
-            .voucher-footer {
-                margin-top: 30px;
-                text-align: center;
-                font-size: 0.85em;
-                color: #555;
-                border-top: 1px dashed #eee;
-                padding-top: 10px;
-                position: relative;
-                z-index: 2;
+            .no-print {
+                display: none !important;
             }
         }
     </style>
 </head>
 <body>
-    <!-- Include header for screen view -->
-    <?php include 'includes/header.php'; ?>
-
-    <div class="container">
-        <h1 class="mb-4 text-center no-print">Voucher Details</h1>
-
+    <div class="container py-4">
+        <h1 class="mb-4 text-center no-print">Shipment Voucher</h1>
         <?php if ($error_message): ?>
             <div class="alert alert-danger alert-dismissible fade show no-print" role="alert">
                 <?php echo $error_message; ?>
                 <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
         <?php elseif ($voucher_data): ?>
-            <div class="card p-4 mb-4">
-                <div class="card-header bg-primary text-white text-center rounded-top-3 py-3 no-print">
-                    <h4 class="mb-0">Voucher Number: <?php echo htmlspecialchars($voucher_data['voucher_number']); ?></h4>
-                </div>
-                <div class="card-body">
-                    <!-- This div contains the printable voucher content -->
-                    <div class="voucher-print-container">
-                        <div class="company-logo-bg"></div> <!-- Company Logo Background -->
-                        <div class="voucher-header">
-                            <h2>MB Logistics</h2>
-                            <h4>Shipment Voucher</h4>
-                            <p><strong>Voucher Number: <?php echo htmlspecialchars($voucher_data['voucher_number']); ?></strong></p>
-                        </div>
-
-                        <div class="row voucher-section">
-                            <div class="col-md-6 voucher-info">
-                                <h5>Sender Information</h5>
-                                <p><strong>Name:</strong> <?php echo htmlspecialchars($voucher_data['sender_name']); ?></p>
-                                <p><strong>Phone:</strong> <?php echo htmlspecialchars($voucher_data['sender_phone']); ?></p>
-                                <p><strong>Address:</strong> <address><?php echo nl2br(htmlspecialchars($voucher_data['sender_address'])); ?></address></p>
-                            </div>
-                            <div class="col-md-6 voucher-info">
-                                <h5>Receiver Information</h5>
-                                <p><strong>Name:</strong> <?php echo htmlspecialchars($voucher_data['receiver_name']); ?></p>
-                                <p><strong>Phone:</strong> <?php echo htmlspecialchars($voucher_data['receiver_phone']); ?></p>
-                                <p><strong>Address:</strong> <address><?php echo nl2br(htmlspecialchars($voucher_data['receiver_address'])); ?></address></p>
-                            </div>
-                        </div>
-
-                        <div class="row voucher-section">
-                            <div class="col-md-6 voucher-info">
-                                <h5>Shipment Details</h5>
-                                <p><strong>Origin Region:</strong> <?php echo htmlspecialchars($voucher_data['origin_region']); ?></p>
-                                <p><strong>Destination Region:</strong> <?php echo htmlspecialchars($voucher_data['destination_region']); ?></p>
-                                <p><strong>Payment Method:</strong> <?php echo htmlspecialchars($voucher_data['payment_method']); ?></p>
-                                <p><strong>Weight (KG):</strong> <?php echo htmlspecialchars($voucher_data['weight_kg']); ?> KG</p>
-                                <p><strong>Price per KG:</strong> <?php echo $voucher_data['currency'] . ' ' . number_format($voucher_data['price_per_kg_at_voucher'], 2); ?></p>
-                                <p><strong>Total Amount:</strong> <strong><?php echo $voucher_data['currency'] . ' ' . number_format($voucher_data['total_amount'], 2); ?></strong></p>
-                            </div>
-                            <div class="col-md-6 voucher-info">
-                                <h5>Tracking Information</h5>
-                                <p><strong>Current Status:</strong> <span class="badge bg-primary"><?php echo htmlspecialchars(str_replace('_', ' ', $voucher_data['status'])); ?></span></p>
-                                <p><strong>Current Location:</strong> <?php echo htmlspecialchars($voucher_data['current_location_region']); ?></p>
-                                <p><strong>Last Status Update:</strong> <?php echo date('Y-m-d H:i', strtotime($voucher_data['last_status_update_at'])); ?></p>
-                                <p><strong>Voucher Created On:</strong> <?php echo date('Y-m-d H:i', strtotime($voucher_data['created_at'])); ?></p>
-                                <p><strong>Delivery Type:</strong> <?php echo htmlspecialchars($voucher_data['delivery_type']); ?></p>
-                                <?php if (!empty($voucher_data['notes'])): ?>
-                                <p><strong>Notes:</strong> <?php echo nl2br(htmlspecialchars($voucher_data['notes'])); ?></p>
-                                <?php endif; ?>
-                            </div>
-                        </div>
-
-                        <div class="voucher-footer">
-                            <p>Thank you for choosing MB Logistics.</p>
-                            <p>Printed On: <?php echo date('Y-m-d H:i:s'); ?></p>
-                            <p>Company Contact: +123 456 7890 | info@mblogistics.com</p>
-                        </div>
-                    </div> <!-- End voucher-print-container -->
-
-                    <div class="d-grid gap-2 mt-4 no-print">
-                        <button class="btn btn-primary btn-lg" onclick="window.print()">Print Voucher</button>
-                        <a href="javascript:history.back()" class="btn btn-secondary btn-lg">Go Back</a>
+            <div class="voucher-print-container">
+                <div class="watermark-mb">MBlogistics</div>
+                <div class="voucher-header">
+                    <div class="logo-col">
+                        <img src="bg.jpg" alt="MB Logistics Logo">
+                    </div>
+                    <div class="info-col">
+                        <h2>MB LOGISTICS</h2>
+                        <h4>Shipment Voucher</h4>
+                        <p><strong>Voucher Number: <?php echo htmlspecialchars($voucher_data['voucher_number']); ?></strong></p>
                     </div>
                 </div>
+
+                <!-- Sender & Receiver Table -->
+                <div class="voucher-section mb-4">
+                    <div class="voucher-section-title">Sender & Receiver Information</div>
+                    <table class="info-table">
+                        <thead>
+                            <tr>
+                                <th>Sender</th>
+                                <th>Receiver</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>
+                                    <strong>Name:</strong> <?php echo htmlspecialchars($voucher_data['sender_name']); ?><br>
+                                    <strong>Phone:</strong> <?php echo htmlspecialchars($voucher_data['sender_phone']); ?><br>
+                                    <strong>Address:</strong> <address><?php echo nl2br(htmlspecialchars($voucher_data['sender_address'])); ?></address>
+                                </td>
+                                <td>
+                                    <strong>Name:</strong> <?php echo htmlspecialchars($voucher_data['receiver_name']); ?><br>
+                                    <strong>Phone:</strong> <?php echo htmlspecialchars($voucher_data['receiver_phone']); ?><br>
+                                    <strong>Address:</strong> <address><?php echo nl2br(htmlspecialchars($voucher_data['receiver_address'])); ?></address>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Voucher Details Table -->
+                <div class="voucher-section mb-4">
+                    <div class="voucher-section-title">Voucher Details</div>
+                    <table class="info-table">
+                        <tbody>
+                            <tr>
+                                <th>Origin Region</th>
+                                <td><?php echo htmlspecialchars($voucher_data['origin_region']); ?></td>
+                            </tr>
+                            <tr>
+                                <th>Destination Region</th>
+                                <td><?php echo htmlspecialchars($voucher_data['destination_region']); ?></td>
+                            </tr>
+                            <tr>
+                                <th>Weight (KG)</th>
+                                <td><?php echo htmlspecialchars($voucher_data['weight_kg']); ?> KG</td>
+                            </tr>
+                            <tr>
+                                <th>Price per KG</th>
+                                <td><?php echo $voucher_data['currency'] . ' ' . number_format($voucher_data['price_per_kg_at_voucher'], 2); ?></td>
+                            </tr>
+                            <tr>
+                                <th>Total Amount</th>
+                                <td><strong><?php echo $voucher_data['currency'] . ' ' . number_format($voucher_data['total_amount'], 2); ?></strong></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Footer -->
+                <div class="footer-section">
+                    <p>Thank you for choosing MB Logistics - Your trusted global shipping partner</p>
+                    <p>Printed On: <?php echo date('Y-m-d H:i:s'); ?> | www.mblogistics.com</p>
+                </div>
+
+                <!-- Important Notes -->
+                <div class="notes">
+                    <p><strong>Important Notes:</strong></p>
+                    <ol>
+                        <li>Items over 5kg may be charged separately.</li>
+                        <li>No illegal items (drugs, weapons, etc.) allowed.</li>
+                        <li>Use appropriate packaging and label your items clearly.</li>
+                    </ol>
+                </div>
+
+                <!-- Signature Section -->
+                <div class="signature-section">
+                    <div class="signature-box">Sender's Signature</div>
+                    <div class="signature-box">Receiver's Signature</div>
+                    <div class="signature-box">Staff Signature</div>
+                </div>
+            </div>
+
+            <div class="d-grid gap-3 mt-4 no-print" style="max-width: 400px; margin: 0 auto;">
+                <button class="btn btn-primary btn-lg" onclick="window.print()">
+                    Print Voucher
+                </button>
+                <a href="javascript:history.back()" class="btn btn-outline-secondary btn-lg">
+                    Back to Dashboard
+                </a>
             </div>
         <?php endif; ?>
     </div>
-
-    <!-- Include footer for screen view -->
-    <?php include 'includes/footer.php'; ?>
+</body>
+</html>
